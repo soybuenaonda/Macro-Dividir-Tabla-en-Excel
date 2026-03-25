@@ -1,0 +1,64 @@
+Sub GenerarTablasConNombresParaAutoCAD()
+    Dim filaInicio As Long, filaFin As Long
+    Dim colOrigen As Integer, colDestino As Integer
+    Dim rSiguiente As Long, numTabla As Integer
+    Dim ws As Worksheet
+    Dim rngTotalTabla As Range
+    
+    Set ws = ActiveSheet
+    filaInicio = 2 ' Ajuste si sus datos originales empiezan en otra fila
+    colOrigen = 1  ' Columna A
+    colDestino = 5 ' Empieza en columna E (puede cambiarlo)
+    numTabla = 1
+    
+    filaFin = ws.Cells(ws.Rows.Count, colOrigen).End(xlUp).Row
+    
+    Application.ScreenUpdating = False
+    
+    For rSiguiente = filaInicio To filaFin Step 50
+        ' --- 1. Título Visual ---
+        ws.Cells(1, colDestino).Value = "TABLA " & numTabla
+        ws.Cells(1, colDestino).Font.Bold = True
+        
+        ' --- 2. Encabezados Estructurados ---
+        ' "ITEMS"
+        ws.Cells(2, colDestino).Value = "ITEMS"
+        ws.Range(ws.Cells(2, colDestino), ws.Cells(3, colDestino)).Merge
+        
+        ' "COORDENADAS"
+        ws.Cells(2, colDestino + 1).Value = "COORDENADAS"
+        ws.Range(ws.Cells(2, colDestino + 1), ws.Cells(2, colDestino + 2)).Merge
+        
+        ' "LATITUD" y "LONGITUD"
+        ws.Cells(3, colDestino + 1).Value = "LATITUD"
+        ws.Cells(3, colDestino + 2).Value = "LONGITUD"
+        
+        ' --- 3. Copiar Datos ---
+        ws.Range(ws.Cells(rSiguiente, colOrigen), ws.Cells(rSiguiente + 49, colOrigen + 2)).Copy _
+        Destination:=ws.Cells(4, colDestino)
+        
+        ' --- 4. Definir Rango Total y Formato ---
+        Set rngTotalTabla = ws.Range(ws.Cells(2, colDestino), ws.Cells(53, colDestino + 2))
+        
+        ' Aplicar Bordes
+        With rngTotalTabla.Borders
+            .LineStyle = xlContinuous
+            .Color = vbBlack
+            .Weight = xlThin
+        End With
+        rngTotalTabla.BorderAround LineStyle:=xlContinuous, Weight:=xlMedium
+        
+        ' --- 5. ASIGNAR NOMBRE AL RANGO (Para AutoCAD) ---
+        ' Esto crea el nombre "TABLA1", "TABLA2", etc. en el Administrador de Nombres
+        On Error Resume Next
+        ws.Names.Add Name:="TABLA" & numTabla, RefersTo:=rngTotalTabla
+        On Error GoTo 0
+        
+        ' --- 6. Siguiente Bloque ---
+        colDestino = colDestino + 4
+        numTabla = numTabla + 1
+    Next rSiguiente
+    
+    Application.ScreenUpdating = True
+    MsgBox "Proceso finalizado. Se han creado " & (numTabla - 1) & " rangos con nombre para AutoCAD.", vbInformation
+End Sub
